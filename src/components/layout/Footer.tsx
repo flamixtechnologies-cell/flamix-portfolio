@@ -65,6 +65,30 @@ export function Footer() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Dynamic viewport height for cross-browser compatibility
+  useEffect(() => {
+    const setDynamicVh = () => {
+      // Get the actual viewport height
+      const vh = window.innerHeight * 0.01;
+      // Set CSS custom property for dynamic viewport height
+      document.documentElement.style.setProperty("--dvh", `${vh}px`);
+    };
+
+    // Set initial value
+    setDynamicVh();
+
+    // Update on resize, orientation change, and scroll (for mobile browsers)
+    window.addEventListener("resize", setDynamicVh);
+    window.addEventListener("orientationchange", setDynamicVh);
+    window.addEventListener("scroll", setDynamicVh, { passive: true });
+
+    return () => {
+      window.removeEventListener("resize", setDynamicVh);
+      window.removeEventListener("orientationchange", setDynamicVh);
+      window.removeEventListener("scroll", setDynamicVh);
+    };
+  }, []);
+
   return (
     <footer
       ref={containerRef}

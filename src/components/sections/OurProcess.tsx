@@ -113,7 +113,7 @@ function ProcessCard({
   }, [index, onIntersect]);
 
   return (
-    <div ref={cardRef} className={`min-h-screen max-md:min-h-auto flex items-center py-24 ${index === 2 ? 'min-h-[120vh] max-md:min-h-auto' : ''}`}>
+    <div ref={cardRef} className={`min-h-screen max-md:min-h-auto flex items-center py-24 max-md:py-8 ${index === 2 ? 'min-h-[120vh] max-md:min-h-auto' : ''}`}>
       <div className="relative w-full max-md:w-full">
         {/* Step number */}
         <div className="mb-4">

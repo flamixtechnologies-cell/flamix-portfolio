@@ -71,6 +71,8 @@
   /* Light theme */
   html {
     color-scheme: light;
+    /* Dynamic viewport height fallback - will be updated by JavaScript */
+    --dvh: 1vh;
   }
 
   body {
