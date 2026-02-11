@@ -139,7 +139,7 @@ function ProcessCard({
         {/* Content */}
         <div>
           <h3
-            className={`text-2xl md:text-3xl lg:text-4xl font-bold mb-3 font-heading transition-colors duration-300 ${isActive ? "text-foreground" : "text-foreground/70"
+            className={`text-2xl md:text-3xl lg:text-4xl font-medium mb-3 font-heading transition-colors duration-300 ${isActive ? "text-foreground" : "text-foreground/70"
               }`}
           >
             {step.title}

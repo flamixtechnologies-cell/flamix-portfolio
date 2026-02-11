@@ -48,7 +48,7 @@ export function SectionHeading({
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className={`relative text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium font-heading leading-[1.1] tracking-tight no-underline ${darkMode ? "text-white" : "text-foreground"
+            className={`relative text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-medium font-heading leading-[1.1] tracking-tight no-underline ${darkMode ? "text-white" : "text-foreground"
               }`}
             style={{ textDecoration: "none", borderBottom: "none" }}
           >

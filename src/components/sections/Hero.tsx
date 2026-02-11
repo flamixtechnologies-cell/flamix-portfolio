@@ -18,7 +18,7 @@ const services = [
 
 function HeroComponent() {
   return (
-    <section className="relative min-h-screen flex flex-col bg-[#F5F5F5] overflow-hidden">
+    <section className="relative min-h-screen flex flex-col bg-[#F5F5F5] overflow-hidden -mt-[84px] md:-mt-[90px]">
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:flex-row items-start lg:items-start justify-between px-6 md:px-12 lg:px-16 xl:px-24 pt-24 lg:pt-32 pb-8 gap-12 lg:gap-8">
         {/* Left Side - Heading */}

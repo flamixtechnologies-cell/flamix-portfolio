@@ -291,7 +291,7 @@ function ServiceCard({
 /* ─── Main Section ────────────────────────────────────────────────── */
 export function Services({
   services = DEFAULT_SERVICES,
-  sectionNumber = "05",
+  sectionNumber = "01",
   title = "Services, staged—not listed.",
   description = "A scroll-driven overview of what we build, how we build it, and where it moves the needle.",
 }: {
@@ -309,10 +309,38 @@ export function Services({
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollRange, setScrollRange] = useState(0);
   const [sectionHeight, setSectionHeight] = useState<number | null>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   // Reset to first service when section mounts
   useEffect(() => {
     setActiveIndex(0);
+  }, []);
+
+  // Get stable viewport height for mobile compatibility
+  useEffect(() => {
+    const getStableViewportHeight = () => {
+      // Get actual viewport height (accounts for mobile address bar)
+      const vh = window.innerHeight * 0.01;
+
+      // Ensure --dvh CSS variable is set (may already be set by Footer)
+      document.documentElement.style.setProperty("--dvh", `${vh}px`);
+
+      // Store the full viewport height for JavaScript calculations
+      setViewportHeight(window.innerHeight);
+    };
+
+    getStableViewportHeight();
+
+    // Update on resize, orientation change, and scroll (for mobile browsers)
+    window.addEventListener("resize", getStableViewportHeight);
+    window.addEventListener("orientationchange", getStableViewportHeight);
+    window.addEventListener("scroll", getStableViewportHeight, { passive: true });
+
+    return () => {
+      window.removeEventListener("resize", getStableViewportHeight);
+      window.removeEventListener("orientationchange", getStableViewportHeight);
+      window.removeEventListener("scroll", getStableViewportHeight);
+    };
   }, []);
 
   /* ── Measure horizontal overflow → compute vertical runway ───── */
@@ -352,7 +380,10 @@ export function Services({
       // We need to scroll from first card to last card's right edge being visible
       // Add extra buffer (viewport width) to ensure smooth scrolling and full visibility
       const extraBuffer = vw; // Full viewport width as buffer to ensure last card is fully visible
-      const totalHeight = window.innerHeight + overflow + extraBuffer;
+
+      // Use stable viewport height (from state) or fallback to window.innerHeight
+      const stableVh = viewportHeight ?? window.innerHeight;
+      const totalHeight = stableVh + overflow + extraBuffer;
 
       setSectionHeight(totalHeight);
     };
@@ -381,7 +412,7 @@ export function Services({
       ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [prefersReducedMotion, services.length]);
+  }, [prefersReducedMotion, services.length, viewportHeight]);
 
   /* ── Scroll → horizontal x ──────────────────────────────────── */
   const { scrollYProgress } = useScroll({
@@ -482,7 +513,8 @@ export function Services({
 
       const rect = section.getBoundingClientRect();
       const sectionTop = window.scrollY + rect.top;
-      const scrollable = section.offsetHeight - window.innerHeight;
+      const stableVh = viewportHeight ?? window.innerHeight;
+      const scrollable = section.offsetHeight - stableVh;
       if (scrollable <= 0) return;
 
       const progress =
@@ -492,7 +524,7 @@ export function Services({
         behavior: prefersReducedMotion ? "auto" : "smooth",
       });
     },
-    [services.length, prefersReducedMotion]
+    [services.length, prefersReducedMotion, viewportHeight]
   );
 
   /* ── Keyboard nav ────────────────────────────────── */
@@ -560,11 +592,16 @@ export function Services({
       <div
         className={useStickyScroll ? "sticky top-0" : ""}
         style={{
-          minHeight: "100vh",
+          minHeight: "calc(var(--dvh) * 100)",
           overscrollBehavior: "contain",
         }}
       >
-        <div className="relative max-w-[1920px] mx-auto px-4 md:px-8 lg:px-20 py-8 md:py-16 flex flex-col justify-center min-h-screen">
+        <div
+          className="relative max-w-[1920px] mx-auto px-4 md:px-8 lg:px-20 py-8 md:py-16 pt-16 md:pt-24 flex flex-col justify-center"
+          style={{
+            minHeight: "calc(var(--dvh) * 100)",
+          }}
+        >
           {/* ── Header ── */}
           <div className="shrink-0">
             <SectionHeading

@@ -192,12 +192,10 @@ export function Navbar() {
           ].join(" ")}
           style={{
             borderColor: scrolled ? "rgba(122,28,172,0.16)" : "rgba(122,28,172,0.10)",
-            background: scrolled ? "rgba(255,255,255,0.64)" : "rgba(255,255,255,0.42)",
+            background: scrolled ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.45)",
             backdropFilter: "blur(18px)",
             WebkitBackdropFilter: "blur(18px)",
-            boxShadow: scrolled
-              ? "0 18px 55px rgba(46,7,63,0.14)"
-              : "0 10px 34px rgba(46,7,63,0.10)",
+
           }}
           aria-label="Primary"
         >
