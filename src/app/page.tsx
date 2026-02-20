@@ -33,10 +33,42 @@ export default function Home() {
     // Reduced delay for better UX
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000); // 2 second delay
+    }, 500); // 2 second delay
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle hash navigation from other pages
+  useEffect(() => {
+    if (isLoading) return;
+
+    const hash = window.location.hash;
+    if (hash) {
+      const id = hash.substring(1); // Remove the #
+      const scrollToSection = () => {
+        const el = document.getElementById(id);
+        if (el) {
+          const navbarHeight = 100;
+          const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
+          const offsetPosition = elementPosition - navbarHeight;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+          });
+          return true;
+        }
+        return false;
+      };
+
+      // Wait a bit for content to load, then try scrolling
+      setTimeout(() => {
+        if (!scrollToSection()) {
+          // Try again after a longer delay if first attempt failed
+          setTimeout(() => scrollToSection(), 300);
+        }
+      }, 100);
+    }
+  }, [isLoading]);
 
   return (
     <>

@@ -1,0 +1,33 @@
+{
+    "name": "Flamix Technologies | Building Digital Excellence",
+    "short_name": "Flamix Tech",
+    "description": "We craft innovative software solutions that drive business growth. From cloud infrastructure to AI-powered applications, we turn your vision into reality.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/logo/logo_icon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/logo/logo_icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "business",
+        "technology",
+        "productivity"
+    ],
+    "lang": "en-US",
+    "dir": "ltr",
+    "scope": "/",
+    "prefer_related_applications": false
+}
