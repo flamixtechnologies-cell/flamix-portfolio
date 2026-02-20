@@ -72,16 +72,29 @@ export const metadata: Metadata = {
     "enterprise solutions",
     "digital transformation",
     "Flamix Technologies",
+    "software consulting",
+    "full stack development",
+    "cloud migration",
+    "microservices",
+    "API development",
+    "software architecture",
+    "agile development",
+    "scalable software",
+    "enterprise software",
   ],
-  authors: [{ name: "Flamix Technologies" }],
+  authors: [{ name: "Flamix Technologies", url: baseUrl }],
   creator: "Flamix Technologies",
   publisher: "Flamix Technologies",
+  applicationName: "Flamix Technologies",
+  referrer: "origin-when-cross-origin",
   robots: {
     index: true,
     follow: true,
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
+      noimageindex: false,
       "max-video-preview": -1,
       "max-image-preview": "large",
       "max-snippet": -1,
@@ -96,25 +109,53 @@ export const metadata: Metadata = {
     description: "We craft innovative software solutions that drive business growth. From cloud infrastructure to AI-powered applications, we turn your vision into reality.",
     images: [
       {
-        url: "/logo/logo.jpg",
+        url: `${baseUrl}/logo/logo.jpg`,
         width: 1200,
         height: 630,
         alt: "Flamix Technologies - Building Digital Excellence",
+        type: "image/jpeg",
       },
     ],
+    emails: ["contact@flamixtechnologies.com"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Flamix Technologies | Building Digital Excellence",
-    description: "We craft innovative software solutions that drive business growth.",
-    images: ["/logo/logo.jpg"],
+    description: "We craft innovative software solutions that drive business growth. From cloud infrastructure to AI-powered applications, we turn your vision into reality.",
+    images: [`${baseUrl}/logo/logo.jpg`],
     creator: "@flamixtech",
+    site: "@flamixtech",
   },
   alternates: {
     canonical: baseUrl,
+    languages: {
+      "en-US": baseUrl,
+    },
   },
   category: "Technology",
   classification: "Software Development Company",
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "apple-mobile-web-app-title": "Flamix Technologies",
+    "mobile-web-app-capable": "yes",
+    "theme-color": "#000000",
+    "color-scheme": "light",
+    // Verification tags - Add your actual verification codes here
+    // "google-site-verification": "your-google-verification-code",
+    // "msvalidate.01": "your-bing-verification-code",
+    // "yandex-verification": "your-yandex-verification-code",
+  },
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/logo/logo_icon.png", sizes: "192x192", type: "image/png" },
+      { url: "/logo/logo_icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/logo/logo_icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -178,14 +219,100 @@ export default function RootLayout({
     },
   };
 
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    serviceType: "Software Development Services",
+    provider: {
+      "@type": "Organization",
+      name: "Flamix Technologies",
+      url: baseUrl,
+    },
+    areaServed: "Worldwide",
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Software Development Services",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: "Cloud Solutions",
+            description: "Scalable cloud infrastructure design, migration, and optimization for enterprise workloads.",
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: "Custom Development",
+            description: "Bespoke software solutions tailored to your business needs with modern tech stacks.",
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: "AI & Machine Learning",
+            description: "Intelligent automation and data-driven insights powered by cutting-edge ML models.",
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: "DevOps & CI/CD",
+            description: "Streamlined deployment pipelines and infrastructure automation for faster delivery.",
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: "Cybersecurity",
+            description: "Comprehensive security audits, penetration testing, and compliance implementation.",
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: "Technical Consulting",
+            description: "Strategic technology guidance and architecture reviews from industry experts.",
+          },
+        },
+      ],
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: baseUrl,
+      },
+    ],
+  };
+
   return (
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/logo/logo_icon.png" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Flamix Technologies" />
       </head>
-      <body className={`antialiased min-h-screen w-full bg-background text-foreground font-sans ${interTight.variable} ${clashDisplay.variable}`}>
+      <body className={`antialiased min-h-screen w-full pt-28 bg-background text-foreground font-sans ${interTight.variable} ${clashDisplay.variable}`}>
         <Script
           id="organization-structured-data"
           type="application/ld+json"
@@ -197,6 +324,18 @@ export default function RootLayout({
           type="application/ld+json"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <Script
+          id="service-structured-data"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+        />
+        <Script
+          id="breadcrumb-structured-data"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
         <LenisProvider>{children}</LenisProvider>
       </body>
