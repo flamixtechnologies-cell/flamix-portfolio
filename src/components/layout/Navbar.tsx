@@ -1,21 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { motion, useMotionValue, useSpring, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
 type NavItem = {
   label: string;
-  href: string; // "/#services" or "/contact"
-  sectionId?: string; // "services"
+  href: string;
 };
 
 const NAV: NavItem[] = [
-  { label: "Services", href: "/#services", sectionId: "services" },
-  { label: "Projects", href: "/#portfolio", sectionId: "portfolio" },
-  { label: "About", href: "/about" },
+  { label: "About Us", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -23,102 +20,128 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-function useScrollSpy(sectionIds: string[], rootMargin = "-35% 0px -55% 0px") {
-  const [active, setActive] = useState<string | null>(null);
+function useMagnet(strength = 0.18) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 220, damping: 18, mass: 0.6 });
+  const sy = useSpring(y, { stiffness: 220, damping: 18, mass: 0.6 });
 
-  useEffect(() => {
-    const els = sectionIds
-      .map((id) => document.getElementById(id))
-      .filter(Boolean) as HTMLElement[];
+  function onMove(e: React.MouseEvent<HTMLElement>) {
+    const el = e.currentTarget;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - (r.left + r.width / 2)) / r.width;
+    const py = (e.clientY - (r.top + r.height / 2)) / r.height;
+    x.set(px * 34 * strength);
+    y.set(py * 34 * strength);
+  }
 
-    if (!els.length) return;
+  function onLeave() {
+    x.set(0);
+    y.set(0);
+  }
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0));
-        if (visible[0]?.target?.id) setActive(visible[0].target.id);
-      },
-      { threshold: [0.12, 0.2, 0.35, 0.5], rootMargin }
-    );
-
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [sectionIds, rootMargin]);
-
-  return active;
+  return { sx, sy, onMove, onLeave };
 }
 
-/** Smooth scroll to an element id with dynamic navbar offset */
-function scrollToId(id: string, offsetPx: number) {
-  const el = document.getElementById(id);
-  if (!el) return;
+// Separate component for nav items to allow hooks usage
+function NavItemComponent({
+  item,
+  isActive,
+  hasAnyActive,
+  isDimmed,
+  onHoverStart,
+  onHoverEnd,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  hasAnyActive: boolean;
+  isDimmed?: boolean;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
+}) {
+  const { sx, sy, onMove, onLeave } = useMagnet(0.22);
 
-  const y = window.scrollY + el.getBoundingClientRect().top - offsetPx;
-  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-}
+  const base =
+    "relative rounded-full px-3 md:px-4 py-2 text-xs md:text-sm uppercase whitespace-nowrap " +
+    "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]";
 
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
+  // If active: opacity 1, if another is active: opacity 0.5, otherwise opacity 1
+  const itemOpacity = isActive ? 1 : hasAnyActive ? 0.5 : 1;
+
+  return (
+    <motion.div
+      onMouseMove={(e) => {
+        onMove(e);
+        onHoverStart?.();
+      }}
+      onMouseLeave={() => {
+        onLeave();
+        onHoverEnd?.();
+      }}
+      style={{ x: sx, y: sy, opacity: itemOpacity }}
+    >
+      <Link
+        href={item.href}
+        className={base}
+        aria-current={isActive ? "page" : undefined}
+      >
+        {item.label}
+      </Link>
+    </motion.div>
+  );
 }
 
 export function Navbar() {
   const pathname = usePathname();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const scrollThreshold = 10; // Minimum scroll distance to trigger hide/show
+  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const headerRef = useRef<HTMLElement | null>(null);
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const barRef = useRef<HTMLElement | null>(null);
 
-  const sectionIds = useMemo(
-    () => NAV.map((n) => n.sectionId).filter(Boolean) as string[],
-    []
-  );
-
-  const activeSection = useScrollSpy(sectionIds);
-  const activeHref =
-    pathname !== "/"
-      ? pathname
-      : activeSection
-        ? `/#${activeSection}`
-        : null;
-
-  // Stronger glass when not at top (classic premium behavior)
+  // Scroll direction detection
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    let ticking = false;
 
-  // Body scroll lock when menu open
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+
+          // Show navbar at the top of the page
+          if (currentScrollY < 50) {
+            setIsVisible(true);
+          } else {
+            // Hide when scrolling down, show when scrolling up
+            if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
+              setIsVisible(false);
+            } else if (currentScrollY < lastScrollY) {
+              setIsVisible(true);
+            }
+          }
+
+          setLastScrollY(currentScrollY);
+          ticking = false;
+        });
+
+        ticking = true;
+      }
     };
-  }, [open]);
 
-  // ESC to close
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY, scrollThreshold]);
 
-  // Glossy sheen that follows cursor (desktop)
-  const sheenX = useMotionValue(55);
-  const sheenY = useMotionValue(10);
-  const sx = useSpring(sheenX, { stiffness: 140, damping: 20, mass: 0.6 });
-  const sy = useSpring(sheenY, { stiffness: 140, damping: 20, mass: 0.6 });
+  // glossy sheen follows cursor (subtle)
+  const sheenX = useMotionValue(50);
+  const sheenY = useMotionValue(35);
+  const sx = useSpring(sheenX, { stiffness: 160, damping: 22 });
+  const sy = useSpring(sheenY, { stiffness: 160, damping: 22 });
 
-  function onHeaderMove(e: React.MouseEvent) {
-    const el = headerRef.current;
+  function onBarMove(e: React.MouseEvent) {
+    const el = barRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width) * 100;
@@ -126,487 +149,292 @@ export function Navbar() {
     sheenX.set(clamp(x, 0, 100));
     sheenY.set(clamp(y, 0, 100));
   }
-  function onHeaderLeave() {
-    sheenX.set(55);
-    sheenY.set(10);
+
+  function onBarLeave() {
+    sheenX.set(50);
+    sheenY.set(30);
   }
 
-  function navOffsetPx() {
-    const h = headerRef.current?.getBoundingClientRect().height ?? 72;
-    // include the top spacing (we keep it snug, so small buffer)
-    return Math.round(h + 14);
-  }
-
-  function handleItemClick(item: NavItem) {
-    // close modal always
-    setOpen(false);
-
-    // Hash sections only on homepage
-    const isHash = item.href.startsWith("/#") && item.sectionId;
-
-    if (isHash) {
-      // If already on home, smooth scroll
-      if (pathname === "/") {
-        scrollToId(item.sectionId!, navOffsetPx());
-        return;
-      }
-      // If not on home, allow normal navigation to "/#id"
-      return;
-    }
-  }
-
-  const isDesktopActive = (href: string) => {
-    if (href.startsWith("/#")) return activeHref === href;
+  const isActive = (href: string) => {
     return pathname === href;
   };
 
-  const overlayVariants = {
-    closed: { scaleY: 0, opacity: 0 },
-    open: { scaleY: 1, opacity: 1 },
-  };
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "instant" as ScrollBehavior,
+    });
+  }, [pathname]);
 
-  const listVariants = {
-    closed: { transition: { staggerChildren: 0.02, staggerDirection: -1 } },
-    open: { transition: { staggerChildren: 0.06, delayChildren: 0.10 } },
-  };
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
-  const itemVariants = {
-    closed: { y: -10, opacity: 0 },
-    open: { y: 0, opacity: 1 },
-  };
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isMobileMenuOpen]);
 
   return (
-    <>
-      {/* Top glass navbar */}
-      <header className="fixed top-0 inset-x-0 z-50">
-        <motion.nav
-          ref={headerRef}
-          onMouseMove={onHeaderMove}
-          onMouseLeave={onHeaderLeave}
-          className={[
-            "mx-auto mt-3",
-            "w-[min(1120px,calc(100%-20px))]",
-            "rounded-[18px] border",
-            "relative overflow-hidden",
-            "px-3.5 sm:px-4 py-3 max-sm:py-2",
-          ].join(" ")}
-          style={{
-            borderColor: scrolled ? "rgba(122,28,172,0.16)" : "rgba(122,28,172,0.10)",
-            background: scrolled ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.45)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-
-          }}
-          aria-label="Primary"
-        >
-          {/* Sheen layer */}
-          <motion.div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              // @ts-ignore
-              ["--sx" as any]: `${sx.get()}%`,
-              // @ts-ignore
-              ["--sy" as any]: `${sy.get()}%`,
-              background:
-                "radial-gradient(520px circle at var(--sx) var(--sy), rgba(255,255,255,0.78), rgba(255,255,255,0.00) 60%)",
-              opacity: scrolled ? 0.55 : 0.45,
+    <header className="fixed top-0 inset-x-0 z-50">
+      <AnimatePresence mode="wait">
+        {isVisible && (
+          <motion.nav
+            key="navbar"
+            ref={barRef}
+            onMouseMove={onBarMove}
+            onMouseLeave={onBarLeave}
+            initial={{
+              clipPath: "inset(0% 50% 0% 50%)",
+              opacity: 0,
             }}
-          />
+            animate={{
+              clipPath: "inset(0% 0% 0% 0%)",
+              opacity: 1,
+            }}
+            exit={{
+              clipPath: "inset(0% 50% 0% 50%)",
+              opacity: 0,
+            }}
+            transition={{
+              duration: 0.5,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            className={[
+              "mx-auto mt-2 md:mt-4",
+              "w-[min(980px,calc(100%-16px))] md:w-[min(980px,calc(100%-24px))]",
+              "rounded-lg",
+              "border",
+              "bg-white/55 backdrop-blur-2xl",
+              "shadow-[0_18px_55px_rgba(46,7,63,0.12)]",
+              "relative overflow-hidden",
+              "px-2 md:px-3 py-1",
+            ].join(" ")}
+            style={{
+              transformOrigin: "center",
+              borderColor: "rgba(122,28,172,0.14)",
+            }}
+            aria-label="Primary"
+          >
+            {/* glossy sheen */}
+            <motion.div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                // @ts-ignore
+                ["--sx" as any]: `${sx.get()}%`,
+                // @ts-ignore
+                ["--sy" as any]: `${sy.get()}%`,
+                background:
+                  "radial-gradient(520px circle at var(--sx) var(--sy), rgba(255,255,255,0.75), rgba(255,255,255,0.00) 60%)",
+                opacity: 0.55,
+              }}
+            />
 
-          {/* Subtle bloom */}
-          <div
-            className="pointer-events-none absolute -top-10 right-8 h-44 w-44 rounded-full blur-[60px]"
-            style={{ background: "rgba(122,28,172,0.10)" }}
-          />
+            {/* subtle purple bloom (tiny) */}
+            <div
+              className="pointer-events-none absolute -top-12 right-10 h-44 w-44 rounded-full blur-[60px]"
+              style={{ background: "rgba(122,28,172,0.09)" }}
+            />
 
-          <div className="relative flex items-center justify-between gap-3">
-            {/* Brand */}
-            <Link
-              href="/"
-              className="flex items-center gap-2 rounded-xl px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]"
-              aria-label="Home"
-              onClick={() => setOpen(false)}
-            >
-              <span
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border"
-                style={{
-                  borderColor: "rgba(122,28,172,0.14)",
-                  background: "rgba(255,255,255,0.55)",
-                }}
+            <div className="relative flex items-center justify-between gap-2 md:gap-3">
+              {/* Brand */}
+              <Link
+                href="/"
+                className="flex items-center gap-1.5 md:gap-2 rounded-xl px-1.5 md:px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]"
+                aria-label="Home"
               >
-                <img
-                  src="/logo/logo_icon.png"
-                  alt="Flamix"
-                  className="h-5 w-5 object-contain"
-                />
-              </span>
+                <span
+                  className="inline-flex size-10 items-center justify-center rounded-xl border bg-white/55"
+                  style={{ borderColor: "rgba(122,28,172,0.16)" }}
+                >
+                  <img
+                    src="/logo/logo_icon.png"
+                    alt="Flamix"
+                    className="size-6 object-contain"
+                  />
+                </span>
 
-              <span className="hidden sm:block font-heading text-[13px] tracking-tight">
-                <span style={{ color: "rgba(26,26,29,0.88)" }}>Flamix</span>
-                <span style={{ color: "rgba(122,28,172,0.70)" }}> Technologies</span>
-              </span>
-            </Link>
+                <span className="hidden sm:block font-heading text-sm md:text-base tracking-tight">
+                  <span style={{ color: "rgba(26,26,29,0.88)" }}>Flamix</span>
+                  <span style={{ color: "rgba(122,28,172,0.70)" }}> Technologies</span>
+                </span>
+              </Link>
 
-            {/* Desktop links */}
-            <div className="hidden md:flex items-center gap-1">
-              {NAV.map((item) => {
-                const active = isDesktopActive(item.href);
-                const isHash = item.href.startsWith("/#") && item.sectionId;
+              {/* Links - Hidden on mobile */}
+              <div className="hidden md:flex items-center gap-2">
+                {NAV.map((item) => {
+                  const isItemActive = isActive(item.href);
+                  const hasAnyActive = NAV.some(navItem => isActive(navItem.href));
 
-                const common =
-                  "relative px-4 py-2 rounded-full text-[12px] font-medium tracking-[0.02em] " +
-                  "transition-colors focus-visible:outline-none focus-visible:ring-2 " +
-                  "focus-visible:ring-[rgba(122,28,172,0.45)]";
-
-                const content = (
-                  <>
-                    {active && (
-                      <motion.span
-                        layoutId="nav-active-pill"
-                        className="absolute inset-0 rounded-full"
-                        style={{ background: "rgba(46,7,63,0.92)" }}
-                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                      />
-                    )}
-
-                    {/* micro-underline (premium, not “template”) */}
-                    <span
-                      className="relative z-10"
-                      style={{
-                        color: active ? "white" : "rgba(26,26,29,0.70)",
-                      }}
-                    >
-                      {item.label}
-                      <span
-                        className="absolute left-1/2 -bottom-[7px] h-[1px] w-0 -translate-x-1/2 transition-all duration-300"
-                        style={{
-                          background: "rgba(122,28,172,0.40)",
-                        }}
-                      />
-                    </span>
-                  </>
-                );
-
-                if (isHash) {
                   return (
-                    <button
+                    <NavItemComponent
                       key={item.href}
-                      type="button"
-                      className={common + " group hover:text-foreground"}
-                      onClick={() => {
-                        if (pathname === "/") {
-                          scrollToId(item.sectionId!, navOffsetPx());
-                        }
-                      }}
-                      aria-current={active ? "location" : undefined}
-                      style={{
-                        color: active ? "white" : "rgba(26,26,29,0.70)",
-                      }}
-                    >
-                      <span className="pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        style={{
-                          background:
-                            "radial-gradient(circle at 50% 30%, rgba(122,28,172,0.14), transparent 68%)",
-                        }}
-                      />
-                      {content}
-                    </button>
-                  );
-                }
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={common + " group"}
-                    aria-current={active ? "page" : undefined}
-                    onClick={() => setOpen(false)}
-                  >
-                    <span
-                      className="pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{
-                        background:
-                          "radial-gradient(circle at 50% 30%, rgba(122,28,172,0.14), transparent 68%)",
-                      }}
+                      item={item}
+                      isActive={isItemActive}
+                      hasAnyActive={hasAnyActive}
+                      isDimmed={hoveredHref !== null && hoveredHref !== item.href}
+                      onHoverStart={() => setHoveredHref(item.href)}
+                      onHoverEnd={() => setHoveredHref(null)}
                     />
-                    {content}
-                  </Link>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Desktop CTA */}
-            <Link
-              href="/contact"
-              className={[
-                "hidden lg:inline-flex items-center justify-center",
-                "rounded-full px-4 py-2 text-[12px] font-semibold",
-                "border",
-                "transition-transform hover:scale-[1.02] active:scale-[0.98]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]",
-              ].join(" ")}
-              style={{
-                borderColor: "rgba(122,28,172,0.16)",
-                background: "rgba(255,255,255,0.55)",
-                color: "rgba(26,26,29,0.82)",
-              }}
-              onClick={() => setOpen(false)}
-            >
-              Start a project
-            </Link>
+              {/* CTA - Hidden on mobile */}
+              <Link
+                href="/contact"
+                className={[
+                  "hidden md:inline-flex",
+                  "items-center justify-center",
+                  "rounded-xl px-4 md:px-5 py-1.5 md:py-2",
+                  "text-xs md:text-sm tracking-tight",
+                  "border bg-white/55 hover:bg-primary hover:text-white transition-colors duration-300 border-primary",
+                  "transition-transform hover:scale-[0.97] active:scale-[0.98]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]",
+                ].join(" ")}
+              >
+                Start a project
+              </Link>
 
-            {/* Mobile toggle */}
-            <button
-              onClick={() => setOpen((v) => !v)}
-              className="md:hidden flex items-center justify-center w-11 h-11 rounded-xl border transition-colors
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]"
-              style={{
-                borderColor: "rgba(122,28,172,0.16)",
-                background: "rgba(255,255,255,0.55)",
-              }}
-              aria-label="Toggle menu"
-              aria-expanded={open}
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {open ? (
-                  <motion.span
-                    key="x"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                  >
-                    <X size={20} style={{ color: "rgba(26,26,29,0.88)" }} />
-                  </motion.span>
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-lg border bg-white/55 hover:bg-white/75 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]"
+                style={{ borderColor: "rgba(122,28,172,0.16)" }}
+                aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-4 w-4 md:h-5 md:w-5" style={{ color: "rgba(26,26,29,0.88)" }} />
                 ) : (
-                  <motion.span
-                    key="m"
-                    initial={{ rotate: 90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                  >
-                    <Menu size={20} style={{ color: "rgba(26,26,29,0.88)" }} />
-                  </motion.span>
+                    <Menu className="h-4 w-4 md:h-5 md:w-5" style={{ color: "rgba(26,26,29,0.88)" }} />
                 )}
-              </AnimatePresence>
-            </button>
-          </div>
-        </motion.nav>
-      </header>
+              </button>
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
 
-      {/* Mobile full-height modal (top → bottom) */}
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
-        {open && (
+        {isMobileMenuOpen && (
           <>
             {/* Backdrop */}
-            <motion.button
-              type="button"
-              aria-label="Close menu"
-              onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[60] bg-black/35 backdrop-blur-sm"
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
             />
 
-            {/* Overlay panel */}
-            <motion.aside
-              className="fixed inset-0 z-[70] origin-top"
-              initial="closed"
-              animate="open"
-              exit="closed"
-              variants={overlayVariants}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+            {/* Mobile Menu */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-white/95 backdrop-blur-2xl z-[70] md:hidden shadow-2xl"
               style={{
-                background:
-                  "radial-gradient(900px circle at 10% -20%, rgba(122,28,172,0.16), transparent 55%)," +
-                  "radial-gradient(900px circle at 90% 10%, rgba(173,73,225,0.14), transparent 52%)," +
-                  "rgba(255,255,255,0.92)",
-                backdropFilter: "blur(18px)",
-                WebkitBackdropFilter: "blur(18px)",
+                borderLeft: "1px solid rgba(122,28,172,0.14)",
               }}
             >
-              {/* top “status bar” spacing */}
-              <div className="pt-5" />
-
-              <div className="mx-auto w-[min(1120px,calc(100%-28px))] h-[calc(100%-20px)]">
-                {/* Modal header row */}
-                <div className="flex items-center justify-between">
+              <div className="flex flex-col h-full">
+                {/* Mobile Menu Header */}
+                <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: "rgba(122,28,172,0.14)" }}>
                   <Link
                     href="/"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-2 rounded-xl px-2 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2"
                   >
                     <span
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-xl border"
-                      style={{
-                        borderColor: "rgba(122,28,172,0.14)",
-                        background: "rgba(255,255,255,0.70)",
-                      }}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border bg-white/55"
+                      style={{ borderColor: "rgba(122,28,172,0.16)" }}
                     >
                       <img
                         src="/logo/logo_icon.png"
                         alt="Flamix"
-                        className="h-6 w-6 object-contain"
+                        className="h-5 w-5 object-contain"
                       />
                     </span>
-                    <span className="font-heading text-[16px] tracking-tight">
-                      <span style={{ color: "rgba(26,26,29,0.90)" }}>Flamix</span>
-                      <span style={{ color: "rgba(122,28,172,0.72)" }}> Technologies</span>
+                    <span className="font-heading text-base tracking-tight">
+                      <span style={{ color: "rgba(26,26,29,0.88)" }}>Flamix</span>
+                      <span style={{ color: "rgba(122,28,172,0.70)" }}> Technologies</span>
                     </span>
                   </Link>
-
                   <button
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-center w-12 h-12 rounded-full border
-                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]
-                               active:scale-95 transition-transform"
-                    style={{
-                      borderColor: "rgba(122,28,172,0.14)",
-                      background: "rgba(255,255,255,0.70)",
-                    }}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg border bg-white/55 hover:bg-white/75 transition-colors"
+                    style={{ borderColor: "rgba(122,28,172,0.16)" }}
                     aria-label="Close menu"
                   >
-                    <X size={22} style={{ color: "rgba(26,26,29,0.88)" }} />
+                    <X className="h-5 w-5" style={{ color: "rgba(26,26,29,0.88)" }} />
                   </button>
                 </div>
 
-                {/* Content */}
-                <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 h-[calc(100%-96px)]">
-                  {/* Big nav list */}
-                  <motion.nav
-                    className="lg:col-span-8 flex flex-col justify-center"
-                    aria-label="Mobile navigation"
-                    variants={listVariants}
-                    initial="closed"
-                    animate="open"
-                    exit="closed"
-                  >
-                    {NAV.map((item, i) => {
-                      const isHash = item.href.startsWith("/#") && item.sectionId;
-                      const active = isDesktopActive(item.href);
-
-                      const Row = (
-                        <motion.div
-                          key={item.href}
-                          variants={itemVariants}
-                          className="group"
-                        >
-                          <div
-                            className={[
-                              "relative px-5 sm:px-7 py-5 sm:py-6",
-                              "transition-transform duration-300",
-                            ].join(" ")}
-                          >
-                            <div className="relative flex items-center justify-between gap-6">
-                              <div className="flex items-center gap-4">
-                                {/* Active dot indicator */}
-                                {active && (
-                                  <span
-                                    className="w-2 h-2 rounded-full"
-                                    style={{
-                                      background: "rgba(122,28,172,0.85)",
-                                    }}
-                                  />
-                                )}
-                                {!active && (
-                                  <span className="w-2 h-2" />
-                                )}
-
-                                <span
-                                  className="font-heading text-[26px] sm:text-[34px] leading-none tracking-tight"
-                                  style={{
-                                    color: "rgba(26,26,29,0.88)",
-                                  }}
-                                >
-                                  {item.label}
-                                </span>
-                              </div>
-
-                              <span
-                                className="text-[12px] sm:text-[13px] font-medium"
-                                style={{
-                                  color: "rgba(26,26,29,0.45)",
-                                }}
-                              >
-                                Explore →
-                              </span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-
-                      if (isHash) {
-                        return (
-                          <button
-                            key={item.href}
-                            type="button"
-                            className="text-left"
-                            onClick={() => {
-                              if (pathname === "/") {
-                                scrollToId(item.sectionId!, navOffsetPx());
-                              }
-                              handleItemClick(item);
-                            }}
-                          >
-                            {Row}
-                          </button>
-                        );
-                      }
+                {/* Mobile Menu Items */}
+                <nav className="flex-1 overflow-y-auto p-4">
+                  <div className="flex flex-col gap-2">
+                    {NAV.map((item, index) => {
+                      const isItemActive = isActive(item.href);
 
                       return (
-                        <Link
+                        <motion.div
                           key={item.href}
-                          href={item.href}
-                          onClick={() => handleItemClick(item)}
-                          className="block"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
                         >
-                          {Row}
-                        </Link>
+                          <Link
+                            href={item.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={[
+                              "block w-full rounded-xl px-4 py-3 text-base font-medium transition-colors",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]",
+                              isItemActive
+                                ? "bg-[rgba(46,7,63,0.92)] text-white"
+                                : "text-[rgba(26,26,29,0.68)] hover:bg-[rgba(122,28,172,0.08)]",
+                            ].join(" ")}
+                          >
+                            {item.label}
+                          </Link>
+                        </motion.div>
                       );
                     })}
-                  </motion.nav>
-
-                  {/* Right panel (optional info/cta) */}
-                  <div className="lg:col-span-4 flex flex-col justify-end mb-8">
-                    <div
-                      className="rounded-3xl border p-6"
-                      style={{
-                        borderColor: "rgba(122,28,172,0.12)",
-                        background: "rgba(255,255,255,0.62)",
-                        boxShadow: "0 16px 44px rgba(46,7,63,0.10)",
-                      }}
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/45">
-                        Quick start
-                      </p>
-                      <p className="mt-3 text-[14px] leading-relaxed text-foreground/70">
-                        Want a clean build with premium motion and perfect responsiveness?
-                        Let’s scope it properly.
-                      </p>
-
-                      <Link
-                        href="/contact"
-                        onClick={() => setOpen(false)}
-                        className="mt-5 inline-flex items-center bg-primary justify-center w-full rounded-2xl px-5 py-4 text-[14px] font-semibold text-white"
-
-                      >
-                        Start a project
-                      </Link>
-
-
-                    </div>
                   </div>
+                </nav>
+
+                {/* Mobile CTA */}
+                <div className="p-4 border-t" style={{ borderColor: "rgba(122,28,172,0.14)" }}>
+                  <Link
+                    href="/contact"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={[
+                      "block w-full text-center",
+                      "rounded-2xl px-6 py-4",
+                      "font-medium tracking-tight",
+                      "border bg-white/55 hover:bg-primary hover:text-white transition-colors duration-300 border-primary",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(122,28,172,0.45)]",
+                    ].join(" ")}
+                  >
+                    Start a project
+                  </Link>
                 </div>
               </div>
-            </motion.aside>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
-
-      {/* Spacer so content doesn’t hide behind fixed nav */}
-      <div className="h-[84px] md:h-[90px]" />
-    </>
+    </header>
   );
 }

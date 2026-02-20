@@ -86,22 +86,16 @@ export function About() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="mt-12 md:mt-16 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+            className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4"
           >
             <Link
-              href="/contact"
-              className="group inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
-              style={{ background: "rgba(122, 28, 172, 0.85)" }}
+              href="/about"
+              className="group bg-[#310c45] inline-flex items-center gap-2 rounded-2xl px-6 py-3  text-white transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
             >
-              Get in Touch
+              Know more about us
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link
-              href="/portfolio"
-              className="text-sm font-medium text-foreground/60 hover:text-foreground/80 transition-colors"
-            >
-              View Our Work →
-            </Link>
+
           </motion.div>
         </div>
       </div>

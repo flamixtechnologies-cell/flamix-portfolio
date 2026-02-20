@@ -18,33 +18,20 @@ import Link from "next/link";
 const footerLinks = {
   product: [
     { label: "Services", href: "/#services" },
-    { label: "Portfolio", href: "/#portfolio" },
-    { label: "Case Studies", href: "#" },
-    { label: "Pricing", href: "#" },
+    { label: "Portfolio", href: "/portfolio" },
+    { label: "Pricing", href: "/contact" },
   ],
   company: [
-    { label: "Careers", href: "#" },
-    { label: "Blog", href: "#" },
+    { label: "About Us", href: "/about" },
     { label: "Contact", href: "/contact" },
-  ],
-  resources: [
-    { label: "Documentation", href: "#" },
-    { label: "API Reference", href: "#" },
-    { label: "Support", href: "#" },
-    { label: "Status", href: "#" },
-  ],
-  legal: [
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
-    { label: "Cookies", href: "#" },
+    { label: "Blog", href: "#" },
   ],
 };
 
 const socialLinks = [
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Github, href: "#", label: "GitHub" },
-  { icon: Instagram, href: "#", label: "Instagram" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/flamix-technologies/posts/?feedView=all", label: "LinkedIn" },
+  { icon: Mail, href: "mailto:flamixtechnologies@gmail.com", label: "Email" },
+  { icon: Instagram, href: "https://www.instagram.com/flamix_technologies/", label: "Instagram" },
 ];
 
 export function Footer() {
@@ -107,7 +94,7 @@ export function Footer() {
           initial={isMobile ? false : { opacity: 0, y: 20 }}
           animate={isMobile || isInView ? { opacity: 1, y: 0 } : {}}
           transition={isMobile ? {} : { duration: 0.6, delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-8 lg:gap-12 pb-12 sm:pb-16 border-b border-white/10"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12 pb-12 sm:pb-16 border-b border-white/10"
         >
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1 mb-6 sm:mb-8 lg:mb-0">
@@ -128,7 +115,7 @@ export function Footer() {
             </div>
             <div className="flex items-center gap-2 text-white/60 text-xs sm:text-sm">
               <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>+977 9800000000</span>
+              <span>+977 9843928450</span>
             </div>
           </div>
 
