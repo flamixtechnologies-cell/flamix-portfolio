@@ -3,7 +3,6 @@
 import React, { memo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { TextRevealChars } from "@/components/ui/TextReveal";
 
@@ -18,11 +17,10 @@ const services = [
 
 function HeroComponent() {
   return (
-    <section className="relative min-h-screen flex flex-col bg-[#F5F5F5] overflow-hidden -mt-[84px] md:-mt-[90px]">
+    <section className="relative min-h-screen flex flex-col overflow-hidden -mt-[84px] md:-mt-[90px]">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:flex-row items-start lg:items-start justify-between px-6 md:px-12 lg:px-16 xl:px-24 pt-24 lg:pt-32 pb-8 gap-12 lg:gap-8">
+      <div className="flex-1 w-full flex flex-col lg:flex-row items-start lg:items-start justify-between px-6 md:px-12 lg:px-16 xl:px-24 pt-24 lg:pt-32 pb-8 gap-12 lg:gap-8 max-w-[1920px] mx-auto">
         {/* Left Side - Heading */}
-        <div className="flex-1 lg:max-w-[55%]">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -40,8 +38,7 @@ function HeroComponent() {
             <TextRevealChars delay={0.7} highlightChars={["D"]}>
               DOMINATE.
             </TextRevealChars>
-          </motion.h1>
-        </div>
+        </motion.h1>
 
         {/* Right Side - Description and CTA */}
         <div className="flex-1 lg:max-w-[40%] flex flex-col gap-6 lg:pt-4">
@@ -96,24 +93,22 @@ function HeroComponent() {
 
       {/* Hero Image Section - Not Full Width */}
       <div className="relative w-full flex justify-center px-6 md:px-12 lg:px-16 xl:px-24 pb-8">
-        <div className="relative w-full max-w-6xl h-[400px] md:h-[500px] lg:h-[600px] bg-[#E8E8E8] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
+        <div className="relative w-full max-w-screen-2xl aspect-video bg-[#E8E8E8] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
 
-          {/* Hero Image */}
+          {/* Hero Video */}
           <motion.div
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
             className="absolute inset-0 w-full h-full"
           >
-            <Image
-              src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=900&auto=format&fit=crop&q=75&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHRlY2h8ZW58MHx8MHx8fDA%3D"
-              alt="Modern digital technology and innovation"
-              fill
-              className="object-cover object-center"
-              priority
-              quality={75}
-              loading="eager"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1152px"
+            <video
+              src="/hero.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover object-center"
             />
           </motion.div>
 

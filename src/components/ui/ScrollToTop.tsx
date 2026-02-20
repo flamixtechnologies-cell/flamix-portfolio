@@ -9,8 +9,8 @@ export function ScrollToTop() {
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 150, damping: 15 });
-  const springY = useSpring(mouseY, { stiffness: 150, damping: 15 });
+  const springX = useSpring(mouseX, { stiffness: 300, damping: 30 });
+  const springY = useSpring(mouseY, { stiffness: 300, damping: 30 });
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -48,8 +48,10 @@ export function ScrollToTop() {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const x = (e.clientX - rect.left - centerX) * 0.3; // Reduce movement by 70%
+    const y = (e.clientY - rect.top - centerY) * 0.3; // Reduce movement by 70%
     mouseX.set(x);
     mouseY.set(y);
   };
@@ -78,8 +80,8 @@ export function ScrollToTop() {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             className="relative group"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             aria-label="Scroll to top"
           >
             {/* Morphing blob container */}

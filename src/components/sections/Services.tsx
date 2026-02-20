@@ -135,11 +135,13 @@ function ServiceCard({
   index,
   isActive,
   prefersReducedMotion,
+  isMobile = false,
 }: {
     svc: Service;
   index: number;
     isActive: boolean;
     prefersReducedMotion: boolean | null;
+    isMobile?: boolean;
 }) {
   const ref = useRef<HTMLElement | null>(null);
 
@@ -176,7 +178,9 @@ function ServiceCard({
       data-active={isActive ? "true" : "false"}
       className={[
         "holo-card group relative shrink-0 snap-center",
-        "w-[80vw] sm:w-[65vw] md:w-[480px] lg:w-[560px] xl:w-[600px]",
+        isMobile
+          ? "w-[85vw]"
+          : "w-[80vw] sm:w-[65vw] md:w-[480px] lg:w-[560px] xl:w-[600px]",
       ].join(" ")}
     >
       <div className="holo-tilt relative h-full rounded-[22px] overflow-hidden">
@@ -310,11 +314,57 @@ export function Services({
   const [scrollRange, setScrollRange] = useState(0);
   const [sectionHeight, setSectionHeight] = useState<number | null>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Reset to first service when section mounts
   useEffect(() => {
     setActiveIndex(0);
   }, []);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Track scroll position for mobile carousel to update activeIndex
+  useEffect(() => {
+    if (!isMobile || !trackRef.current) return;
+
+    const track = trackRef.current;
+
+    const handleScroll = () => {
+      const scrollLeft = track.scrollLeft;
+      const cardWidth = (window.innerWidth * 85) / 100; // 85vw
+      const gap = 20; // gap-5 = 20px
+      const padding = 20; // p-5 = 20px
+      const cardWidthWithGap = cardWidth + gap;
+
+      // Account for padding: scrollLeft starts after padding
+      // Calculate which card is primarily visible
+      const adjustedScroll = scrollLeft + padding;
+      const newIndex = Math.round(adjustedScroll / cardWidthWithGap);
+      const clampedIndex = clamp(newIndex, 0, services.length - 1);
+
+      if (clampedIndex !== activeIndex) {
+        setActiveIndex(clampedIndex);
+      }
+    };
+
+    // Initial check
+    handleScroll();
+
+    track.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      track.removeEventListener("scroll", handleScroll);
+    };
+  }, [isMobile, services.length]);
 
   // Get stable viewport height for mobile compatibility
   useEffect(() => {
@@ -470,7 +520,7 @@ export function Services({
   }, [prefersReducedMotion, scrollYProgress]);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion || isMobile) return;
 
     // Clamp the value between 0 and 1
     const clamped = Math.max(0, Math.min(1, v));
@@ -506,10 +556,26 @@ export function Services({
   /* ── Click-to-scroll ────────────────────────────────────────── */
   const scrollToIndex = useCallback(
     (idx: number) => {
-      const section = sectionRef.current;
-      if (!section) return;
       const clamped = clamp(idx, 0, services.length - 1);
       setActiveIndex(clamped);
+
+      // On mobile, scroll the track to the correct position
+      if (isMobile && trackRef.current) {
+        const track = trackRef.current;
+        const cardWidth = (window.innerWidth * 85) / 100; // 85vw
+        const gap = 20; // gap-5 = 20px
+        const cardWidthWithGap = cardWidth + gap;
+        const scrollPosition = clamped * cardWidthWithGap;
+
+        track.scrollTo({
+          left: scrollPosition,
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+        return;
+      }
+
+      const section = sectionRef.current;
+      if (!section) return;
 
       const rect = section.getBoundingClientRect();
       const sectionTop = window.scrollY + rect.top;
@@ -524,7 +590,7 @@ export function Services({
         behavior: prefersReducedMotion ? "auto" : "smooth",
       });
     },
-    [services.length, prefersReducedMotion, viewportHeight]
+    [services.length, prefersReducedMotion, viewportHeight, isMobile]
   );
 
   /* ── Keyboard nav ────────────────────────────────── */
@@ -555,7 +621,7 @@ export function Services({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeIndex, services.length, scrollToIndex]);
 
-  const useStickyScroll = !prefersReducedMotion;
+  const useStickyScroll = !prefersReducedMotion && !isMobile;
   const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   return (
@@ -612,10 +678,11 @@ export function Services({
           </div>
 
           {/* ── Centered Service Cards ── */}
-          <div className="relative flex-1 flex flex-col justify-center">
+          <div className={`relative flex-1 flex flex-col justify-center ${isMobile ? "overflow-x-visible" : ""}`}>
             <div
               ref={viewportRef}
-              className="relative overflow-hidden rounded-[22px] border border-[rgba(122,28,172,0.08)] mx-auto w-full"
+              className={`relative rounded-[22px] border border-[rgba(122,28,172,0.08)] mx-auto ${isMobile ? "w-[calc(100%-2rem)] overflow-x-visible" : "w-full overflow-hidden"
+                }`}
               style={{
                 overscrollBehavior: "contain",
               }}
@@ -624,13 +691,16 @@ export function Services({
                 ref={trackRef}
                 className={[
                   "flex gap-5 md:gap-6 lg:gap-8 p-5 md:p-6 lg:p-8 ",
-                  !useStickyScroll
+                  isMobile
+                    ? "overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+                    : !useStickyScroll
                     ? "overflow-x-auto snap-x snap-mandatory scrollbar-thin"
                     : "",
                 ].join(" ")}
                 style={{
-                  x: useStickyScroll ? x : 0,
+                  x: isMobile ? 0 : useStickyScroll ? x : 0,
                   willChange: useStickyScroll ? "transform" : "auto",
+                  WebkitOverflowScrolling: isMobile ? "touch" : "auto",
                 }}
               >
                 {services.map((svc, idx) => (
@@ -640,6 +710,7 @@ export function Services({
                     index={idx}
                     isActive={idx === activeIndex}
                     prefersReducedMotion={prefersReducedMotion}
+                    isMobile={isMobile}
                   />
                 ))}
               </motion.div>
@@ -675,23 +746,6 @@ export function Services({
                     />
                   </MagneticButton>
                 ))}
-              </div>
-
-              {/* Links - centered */}
-              <div className="mt-4 flex items-center gap-4">
-                <Link
-                  href="/portfolio"
-                  className="text-[13px] font-semibold text-primary hover:opacity-90 transition-opacity"
-                >
-                  View all work
-                </Link>
-                <span style={{ color: "rgba(0,0,0,0.12)" }}>·</span>
-                <Link
-                  href="/contact"
-                  className="text-[13px] font-medium text-foreground/45 hover:text-foreground/70 transition-colors"
-                >
-                  Discuss scope
-                </Link>
               </div>
             </div>
 

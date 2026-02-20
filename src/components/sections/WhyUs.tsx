@@ -98,7 +98,7 @@ function DifferenceListItem({
                         initial={{ opacity: 0, x: -8 }}
                         animate={isInView ? { opacity: 1, x: 0 } : {}}
                         transition={{ duration: 0.3, delay: index * 0.08 + 0.2 }}
-                        className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 block"
+                        className="text-sm font-bold uppercase tracking-[0.2em] mb-2 block"
                         style={{
                             color: isDark
                                 ? "#AD49E1"
