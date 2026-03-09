@@ -100,7 +100,9 @@ export default function Home() {
                   <OurProcess />
                 </Suspense>
                 <Suspense fallback={<div className="min-h-screen" />}>
+                  <div id="portfolio">
                   <Portfolio />
+                  </div>
                 </Suspense>
                 <Suspense fallback={<div className="min-h-screen" />}>
                   <CTA />

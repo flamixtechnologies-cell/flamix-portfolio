@@ -51,7 +51,7 @@ const clashDisplay = localFont({
   adjustFontFallback: false,
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://flamixtechnologies.com";
+const baseUrl = "https://flamixtechnologies.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -109,20 +109,20 @@ export const metadata: Metadata = {
     description: "We craft innovative software solutions that drive business growth. From cloud infrastructure to AI-powered applications, we turn your vision into reality.",
     images: [
       {
-        url: `${baseUrl}/logo/logo.jpg`,
+        url: `${baseUrl}/og.png`,
         width: 1200,
         height: 630,
         alt: "Flamix Technologies - Building Digital Excellence",
-        type: "image/jpeg",
+        type: "image/png",
       },
     ],
-    emails: ["contact@flamixtechnologies.com"],
+    emails: ["flamixtechnologies@gmail.com"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Flamix Technologies | Building Digital Excellence",
     description: "We craft innovative software solutions that drive business growth. From cloud infrastructure to AI-powered applications, we turn your vision into reality.",
-    images: [`${baseUrl}/logo/logo.jpg`],
+    images: [`${baseUrl}/og.png`],
     creator: "@flamixtech",
     site: "@flamixtech",
   },

@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, ArrowRight } from "lucide-react";
+import { ArrowUpRight, ArrowRight } from "lucide-react";
 import type { Project } from "@/data/portfolio";
 
 interface Props {
@@ -27,7 +27,7 @@ export function ProjectDetailClient({ project, allProjects }: Props) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   HERO — Cinematic with title overlaid on image
+   HERO — Simple static hero (no parallax)
 ───────────────────────────────────────────────────────────── */
 function ProjectHero({
   project,
@@ -37,31 +37,27 @@ function ProjectHero({
   project: Project;
   index: number;
   total: number;
-}) {
-  const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-
-  const imageScale = useTransform(scrollYProgress, [0, 1], [1.0, 1.1]);
-  const titleY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
-
+  }) {
   return (
-    <section
-      ref={heroRef}
-      className="relative mt-8 sm:mt-10 md:mt-12 px-4 sm:px-6 md:px-12 lg:px-16 xl:px-20"
-      style={{ minHeight: "calc(100svh - 120px)" }}
-    >
-      <div
-        className="relative overflow-hidden rounded-2xl sm:rounded-3xl"
-        style={{ minHeight: "calc(100svh - 120px)" }}
-      >
-        {/* Parallax background */}
-        <motion.div
-          style={{ scale: imageScale }}
-          className="absolute inset-0 origin-center"
-        >
+    <section className="relative w-full bg-tertiary px-4 sm:px-6 md:px-12 lg:px-16 xl:px-20 py-12 sm:py-16 md:py-20">
+      <div className="max-w-[1920px] mx-auto grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center">
+        {/* Text content */}
+        <div className="space-y-5 sm:space-y-6">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.3em] font-sans text-white/60">
+            Case Study • {String(index + 1).padStart(2, "0")}/{String(total).padStart(2, "0")}
+          </p>
+
+          <h1
+            className="font-heading font-semibold text-white leading-[0.95] tracking-tight"
+            style={{ fontSize: "clamp(28px, 3.2rem, 56px)" }}
+          >
+            {project.title}
+          </h1>
+
+        </div>
+
+        {/* Image */}
+        <div className="relative w-full max-w-xl lg:max-w-none lg:justify-self-end aspect-4/3 rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-white/5">
           <Image
             src={project.image}
             alt={project.imageAlt}
@@ -69,35 +65,9 @@ function ProjectHero({
             className="object-cover"
             priority
             quality={90}
-            sizes="100vw"
+            sizes="(max-width: 1024px) 100vw, 50vw"
           />
-        </motion.div>
-
-        {/* Gradient: faint top, strong bottom */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(26,26,29,0.35) 0%, rgba(26,26,29,0.0) 38%, rgba(26,26,29,0.78) 100%)",
-          }}
-        />
-        {/* ── Overlaid title at bottom ── */}
-        <motion.div
-          style={{ y: titleY }}
-          className="absolute bottom-6 left-4 right-4 sm:bottom-8 sm:left-6 sm:right-6 md:bottom-10 md:left-10 md:right-10 z-10"
-        >
-          <div style={{ overflow: "hidden" }}>
-            <motion.h1
-              initial={{ y: "106%" }}
-              animate={{ y: "0%" }}
-              transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
-              className="font-heading font-semibold text-white leading-[0.88] tracking-tight"
-              style={{ fontSize: "clamp(28px, 7.5vw, 60px)" }}
-            >
-              {project.title}
-            </motion.h1>
-          </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -223,7 +193,7 @@ function ProjectContent({ project }: { project: Project }) {
               initial={{ opacity: 0, y: 18 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="font-heading leading-[1.3] sm:leading-[1.25] md:leading-[1.18] tracking-tight"
+              className="font-heading leading-[1.3] sm:leading-tight md:leading-[1.18] tracking-tight"
               style={{
                 fontSize: "clamp(18px, 4vw, 22px)",
                 color: "rgb(26,26,29)",

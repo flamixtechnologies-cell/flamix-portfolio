@@ -14,11 +14,6 @@
 
 @layer base {
 
-  /* Smooth scroll */
-  * {
-    scroll-behavior: smooth;
-  }
-
   /* Font Face Declarations */
   @font-face {
     font-family: "Clash Display";
