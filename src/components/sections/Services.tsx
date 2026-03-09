@@ -639,7 +639,7 @@ export function Services({
       }}
     >
       {/* Ambient background blobs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-44 -left-44 h-[520px] w-[520px] rounded-full blur-[110px]"
           style={{ background: "rgba(122,28,172,0.06)" }}
@@ -652,7 +652,7 @@ export function Services({
           className="absolute -bottom-52 left-1/3 h-[500px] w-[500px] rounded-full blur-[120px]"
           style={{ background: "rgba(173,73,225,0.05)" }}
         />
-      </div>
+      </div> */}
 
       {/* Sticky wrapper — everything inside stays pinned while section scrolls */}
       <div
@@ -681,7 +681,7 @@ export function Services({
           <div className={`relative flex-1 flex flex-col justify-center ${isMobile ? "overflow-x-visible" : ""}`}>
             <div
               ref={viewportRef}
-              className={`relative rounded-[22px] border border-[rgba(122,28,172,0.08)] mx-auto ${isMobile ? "w-[calc(100%-2rem)] overflow-x-visible" : "w-full overflow-hidden"
+              className={`relative rounded-[22px] border border-[rgba(122,28,172,0.08)] mx-auto ${isMobile ? "w-[calc(100%)] overflow-x-visible" : "w-full overflow-hidden"
                 }`}
               style={{
                 overscrollBehavior: "contain",

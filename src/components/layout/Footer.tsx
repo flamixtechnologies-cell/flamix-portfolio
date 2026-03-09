@@ -18,7 +18,6 @@ import Link from "next/link";
 const footerLinks = {
   product: [
     { label: "Services", href: "/#services" },
-    { label: "Portfolio", href: "/portfolio" },
     { label: "Pricing", href: "/contact" },
   ],
   company: [

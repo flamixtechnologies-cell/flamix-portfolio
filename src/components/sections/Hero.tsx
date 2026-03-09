@@ -59,8 +59,25 @@ function HeroComponent() {
           >
 
             <Link
-              href="/portfolio"
+              href="/#portfolio"
+              scroll={false}
               className="group inline-flex items-center gap-2 text-xs md:text-sm text-[#6B6B6B] hover:text-[#1A1A1D] transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                const el = document.getElementById("portfolio");
+                if (el) {
+                  const navbarHeight = 100;
+                  const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
+                  const offsetPosition = elementPosition - navbarHeight;
+
+                  window.history.pushState(null, "", "/#portfolio");
+
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth",
+                  });
+                }
+              }}
             >
               <span className="text-primary">View Our Work</span>
               <ArrowRight className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" />
